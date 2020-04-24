@@ -9,15 +9,6 @@ using namespace std;
 
 enum class State { kEmpty, kObstacle, kClosed, kStart, kFinish, kPath}; // define a new type: 'State'
 
-// initiate functions
-string CellString(State);
-int Heuristic(int, int, int, int);
-void AddToFrontier(int, int, int, int, vector<vector<int>>&, vector<vector<State>>&);
-void SortFrontier(vector<vector<int>>*);
-bool CompareScore(const vector<int>, const vector<int>);
-void ExpandNeighbors(vector<int>&, vector<vector<int>>&, vector<vector<State>>& , int[2]);
-
-
 string CellString( State cell ){
     // take a cell's State as input, output its print value
     switch (cell) {
@@ -73,43 +64,7 @@ void PrintGrid(const vector<vector<State>> grid) {
     }
 }
 
-vector<vector<State>> Search(vector<vector<State>> grid, int start[2], int goal[2]) {
-    // Inputs: a grid, a start array (coordinates), and a goal array (coordinates)
-    // Return: grid with a path from the start to the goal
-    vector<vector<int>> frontier{};
-    int x = start[0];
-    int y = start[1];
-    int g = 0;
-    int h = Heuristic(x, y, goal[0], goal[1]);
 
-    AddToFrontier(x, y, g, h, frontier, grid); // add the start node to frontier
-    
-    while (frontier.size() > 0) {
-        SortFrontier(&frontier);
-        vector<int> curNode = frontier.back(); //last has least f score
-        frontier.pop_back(); // remove from frontier, already marked closed earlier
-        x = curNode[0];
-        y = curNode[1];
-        grid[x][y] = State::kPath;
-
-        if (x == goal[0] && y == goal[1]) { // found goal, return
-            grid[start[0]][start[1]] = State::kStart;
-            grid[goal[0]][goal[1]] = State::kFinish;
-            return grid;
-        }
-        else {
-            ExpandNeighbors(curNode, frontier, grid, goal);
-        }
-    }
-    cout << "No path found!" << "\n"; // loop ends without return
-    return vector<vector<State>>{};
-}
-
-void SortFrontier(vector<vector<int>>* frontier) {
-    // Sort a vector in descending order 
-
-    sort(frontier->begin(), frontier->end(), CompareScore);
-}
 
 int Heuristic(int x1, int y1, int x2, int y2) {
     // Inputs: two xy coordinates
@@ -139,12 +94,14 @@ bool CheckValidCell(int x, int y, vector<vector<State>> &grid) {
     return false;
 }
 
-void AddToFrontier(int x, int y, int g, int h, vector<vector<int>> &frontier, vector<vector<State>> &grid) {
-    
+
+
+void AddToFrontier(int x, int y, int g, int h, vector<vector<int>>& frontier, vector<vector<State>>& grid) {
+
     vector<int> node = { x, y, g, h };
-    /* a node contains 4 values: 
-    1. x coordinate 
-    2. y coordinate, 
+    /* a node contains 4 values:
+    1. x coordinate
+    2. y coordinate,
     3. g value(or cost) that has accumulated up to that cell
     4. h value for the cell, given by the Heuristic function
     */
@@ -153,27 +110,65 @@ void AddToFrontier(int x, int y, int g, int h, vector<vector<int>> &frontier, ve
 
     // mark the node as closed, so that algorithm does not search nodes that are already in frontier
     // but instead search the neighbors of frontier nodes
-    grid[x][y] = State::kClosed; 
+    grid[x][y] = State::kClosed;
 
 }
 
+void SortFrontier(vector<vector<int>>* frontier) {
+    // Sort a vector in descending order 
 
-void ExpandNeighbors(vector<int> &node, vector<vector<int>> &frontier, vector<vector<State>> &grid, int goal[2]) {
+    sort(frontier->begin(), frontier->end(), CompareScore);
+}
+
+void ExpandNeighbors(vector<int>& node, vector<vector<int>>& frontier, vector<vector<State>>& grid, int goal[2]) {
     int x = node[0];
     int y = node[1];
     int g = node[2];
- 
+
     vector<int> neighbor_x = { x - 1,       x,       x + 1,       x };  //left, top, right, bot
-    vector<int> neighbor_y = {   y    ,   y + 1,       y,       y - 1 };
+    vector<int> neighbor_y = { y    ,   y + 1,       y,       y - 1 };
     int neighbor_h;
 
     for (int i = 0; i <= 3; i++) {
         if (CheckValidCell(neighbor_x[i], neighbor_y[i], grid)) {
             neighbor_h = Heuristic(neighbor_x[i], neighbor_y[i], goal[0], goal[1]);
-            AddToFrontier(neighbor_x[i], neighbor_y[i], g+1, neighbor_h, frontier, grid); // g(cost) of each step is 1
+            AddToFrontier(neighbor_x[i], neighbor_y[i], g + 1, neighbor_h, frontier, grid); // g(cost) of each step is 1
         }
     }
 
+}
+
+vector<vector<State>> Search(vector<vector<State>> grid, int start[2], int goal[2]) {
+    // Inputs: a grid, a start array (coordinates), and a goal array (coordinates)
+    // Return: grid with a path from the start to the goal
+
+    vector<vector<int>> frontier{};
+    int x = start[0];
+    int y = start[1];
+    int g = 0;
+    int h = Heuristic(x, y, goal[0], goal[1]);
+
+    AddToFrontier(x, y, g, h, frontier, grid); // add the start node to frontier
+
+    while (frontier.size() > 0) {
+        SortFrontier(&frontier);
+        vector<int> curNode = frontier.back(); //last has least f score
+        frontier.pop_back(); // remove from frontier, already marked closed earlier
+        x = curNode[0];
+        y = curNode[1];
+        grid[x][y] = State::kPath;
+
+        if (x == goal[0] && y == goal[1]) { // found goal, return
+            grid[start[0]][start[1]] = State::kStart;
+            grid[goal[0]][goal[1]] = State::kFinish;
+            return grid;
+        }
+        else {
+            ExpandNeighbors(curNode, frontier, grid, goal);
+        }
+    }
+    cout << "No path found!" << "\n"; // loop ends without return
+    return vector<vector<State>>{};
 }
 
 int main() {
